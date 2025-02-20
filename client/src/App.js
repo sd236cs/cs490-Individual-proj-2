@@ -398,11 +398,39 @@ function App() {
                         <ul>
                             {searchResults.map((film) => (
                                 <li key={film.film_id}>
-                                    <strong>{film.title}</strong> - {film.genre ? `Genre: ${film.genre}` : ""}
-                                    {film.actor && ` (Actor: ${film.actor})`}
+                                    <a
+                                        href="#"
+                                        className="film-title-link"
+                                        onClick={(e) => {
+                                            e.preventDefault(); // Prevent default anchor behavior
+                                            fetchFilmDetails(film.film_id); // Fetch movie details
+                                        }}
+                                    >
+                                        {film.title}
+                                    </a>
+                                    {film.genre && ` - Genre: ${film.genre}`} {/* Add more details if needed */}
                                 </li>
                             ))}
                         </ul>
+                    </div>
+                )}
+                {/* Modal for Film Details */}
+                {showFilmDetails && selectedFilm && (
+                    <div className="modal-overlay">
+                        <div className="modal-content">
+                            <button
+                                className="close-modal-button"
+                                onClick={() => setShowFilmDetails(false)}
+                            >
+                                Close
+                            </button>
+                            {/* Display Selected Film Details */}
+                            <h3>{selectedFilm.title}</h3>
+                            <p><strong>Genre:</strong> {selectedFilm.category}</p>
+                            <p><strong>Description:</strong> {selectedFilm.description}</p>
+                            <p><strong>Release Year:</strong> {selectedFilm.release_year}</p>
+                            <p><strong>Rating:</strong> {selectedFilm.rating}</p>
+                        </div>
                     </div>
                 )}
             </div>

@@ -123,6 +123,28 @@ html{
   background-color: lightseagreen;
 }
 
+
 ul {
   font-family: 'fantasy';
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  margin-bottom: 8px; /* Add spacing between list items for better readability */
+}
+
+/* Optional: Style for anchor tags within the list */
+.film-title-link {
+  color: #2a71d0;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.film-title-link:hover {
+  color: #1a51a0;
+  text-decoration: none;
 }
