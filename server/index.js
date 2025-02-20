@@ -16,6 +16,54 @@ const connection = await mysql.createPool({
     connectionLimit: 10,
     queueLimit: 0
 });
+app.get("/movies-in-store/:storeId", async (req, res) => {
+    const { storeId } = req.params;
+    const query = `
+        SELECT DISTINCT f.film_id, f.title
+        FROM film f
+        JOIN inventory i ON f.film_id = i.film_id
+        WHERE i.store_id = ?;
+    `;
+    try {
+        const [results] = await connection.query(query, [storeId]);
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: "No movies found for the given store ID." });
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error("Error fetching movies for store:", error);
+        res.status(500).json({ error: "Error fetching movies. Please try again." });
+    }
+});
+
+// Route to fetch top actors by store ID
+app.get("/top-actors-in-store/:storeId", async (req, res) => {
+    const { storeId } = req.params;
+    const query = `
+        SELECT a.actor_id, a.first_name, a.last_name, COUNT(fa.film_id) AS film_count
+        FROM actor a
+        JOIN film_actor fa ON a.actor_id = fa.actor_id
+        JOIN inventory i ON fa.film_id = i.film_id
+        WHERE i.store_id = ?
+        GROUP BY a.actor_id
+        ORDER BY film_count DESC
+        LIMIT 5;
+    `;
+    try {
+        const [results] = await connection.query(query, [storeId]);
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: "No actors found for the given store ID." });
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error("Error fetching top actors for store:", error);
+        res.status(500).json({ error: "Error fetching top actors. Please try again." });
+    }
+});
 
 app.get("/top5", async (req, res) => {
     try {
@@ -81,6 +129,7 @@ app.get('/film/:id', async (req, res) => {
         }
     }
 });
+
 
 // Start the server
 const PORT = 5000;
