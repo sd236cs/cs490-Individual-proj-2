@@ -122,3 +122,7 @@ tr:hover {
 html{
   background-color: lightseagreen;
 }
+
+ul {
+  font-family: 'fantasy';
+}

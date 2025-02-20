@@ -204,7 +204,63 @@ app.get("/actor-top-films/:actorId", async (req, res) => {
 });
 
 // feature 5
+app.get("/search-films", async (req, res) => {
+    const { query, category } = req.query;
 
+    // Validate query parameters
+    if (!query || !category) {
+        return res.status(400).json({ error: "Query and category are required." });
+    }
+
+    try {
+        let sqlQuery;
+        let params = [`%${query}%`]; // Search term with wildcards
+
+        // Adjust query based on category
+        if (category === "title") {
+            sqlQuery = `
+                SELECT DISTINCT f.film_id, f.title, c.name AS genre
+                FROM film f
+                LEFT JOIN film_category fc ON f.film_id = fc.film_id
+                LEFT JOIN category c ON fc.category_id = c.category_id
+                WHERE f.title LIKE ? COLLATE utf8_general_ci;
+            `;
+        } else if (category === "actor") {
+            sqlQuery = `
+                SELECT DISTINCT f.film_id, f.title, c.name AS genre, 
+                                CONCAT(a.first_name, ' ', a.last_name) AS actor
+                FROM film f
+                JOIN film_actor fa ON f.film_id = fa.film_id
+                JOIN actor a ON fa.actor_id = a.actor_id
+                LEFT JOIN film_category fc ON f.film_id = fc.film_id
+                LEFT JOIN category c ON fc.category_id = c.category_id
+                WHERE CONCAT(a.first_name, ' ', a.last_name) LIKE ? COLLATE utf8_general_ci;
+            `;
+        } else if (category === "genre") {
+            sqlQuery = `
+                SELECT DISTINCT f.film_id, f.title, c.name AS genre
+                FROM film f
+                JOIN film_category fc ON f.film_id = fc.film_id
+                JOIN category c ON fc.category_id = c.category_id
+                WHERE c.name LIKE ? COLLATE utf8_general_ci;
+            `;
+        } else {
+            return res.status(400).json({ error: "Invalid category. Choose 'title', 'actor', or 'genre'." });
+        }
+
+        // Execute the query
+        const [results] = await connection.execute(sqlQuery, params);
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: "No matching films found." });
+        }
+
+        res.json(results); // Return the search results
+    } catch (error) {
+        console.error("Error searching for films:", error);
+        res.status(500).json({ error: "An error occurred while searching for films." });
+    }
+});
 
 // Start the server
 const PORT = 5000;

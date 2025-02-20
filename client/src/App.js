@@ -22,6 +22,12 @@ function App() {
     const [showResults, setShowResults] = useState(false); // Toggle results display
     const [errorMessage, setErrorMessage] = useState(""); // Error message
 
+    //for feature 5
+    const [searchInput, setSearchInput] = useState(""); // Search term input from the user
+    const [searchCategory, setSearchCategory] = useState("title"); // Default category is title
+    const [searchResults, setSearchResults] = useState([]); // Results from the search
+    const [searchError, setSearchError] = useState(""); // Error during search
+    const [showSearchResults, setShowSearchResults] = useState(false); // Toggle search results display
 
     const handleInputChange = (e) => {
         setStoreId(e.target.value);
@@ -133,6 +139,39 @@ function App() {
         setShowResults(false);
         setActorDetails(null);
         setTopFilms([]);
+    };
+
+    //feature 5
+
+    const handleSearch5 = async (e) => {
+        e.preventDefault(); // Prevent page reload
+        setSearchError(""); // Reset any previous error message
+        setSearchResults([]); // Clear previous results
+        setShowSearchResults(false); // Hide previous results during a new search
+
+        if (!searchInput.trim()) {
+            setSearchError("Please enter a search term.");
+            return;
+        }
+
+        try {
+            const response = await axios.get("http://localhost:5000/search-films", {
+                params: {
+                    query: searchInput, // Search input
+                    category: searchCategory, // Search category (title, actor, genre)
+                },
+            });
+
+            if (response.data.length === 0) {
+                setSearchError("No results found for your search.");
+            } else {
+                setSearchResults(response.data);
+                setShowSearchResults(true);
+            }
+        } catch (error) {
+            console.error("Error performing search:", error);
+            setSearchError("An error occurred during the search. Please try again.");
+        }
     };
 
     return (
@@ -318,6 +357,55 @@ function App() {
                     Hide Results
                 </button>
             )}
+
+            {/* FEATURE 5 */}
+            {/* Film Search Section */}
+            <div className="search-section">
+                <h2>Search Films</h2>
+                <form onSubmit={handleSearch5}>
+                    <label>
+                        Search Term:
+                        <input
+                            type="text"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            placeholder="Enter film title, actor, or genre"
+                        />
+                    </label>
+                    <label>
+                        Category:
+                        <select
+                            value={searchCategory}
+                            onChange={(e) => setSearchCategory(e.target.value)}
+                        >
+                            <option value="title">Film Title</option>
+                            <option value="actor">Actor Name</option>
+                            <option value="genre">Genre</option>
+                        </select>
+                    </label>
+                    <button type="submit">Search</button>
+                </form>
+
+                {/* Error Message */}
+                {searchError && <p className="error">{searchError}</p>}
+
+                {/* Search Results */}
+                {showSearchResults && (
+                    <div className="search-results">
+                        <h3>Search Results:</h3>
+                        {/* Button to hide search results */}
+                        <button onClick={() => setShowSearchResults(false)}>Hide Results</button>
+                        <ul>
+                            {searchResults.map((film) => (
+                                <li key={film.film_id}>
+                                    <strong>{film.title}</strong> - {film.genre ? `Genre: ${film.genre}` : ""}
+                                    {film.actor && ` (Actor: ${film.actor})`}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
