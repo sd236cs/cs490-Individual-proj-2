@@ -37,6 +37,17 @@
   }
 }
 
+h1 {
+  font-family: 'Edwardian Script ITC', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 60px;
+  margin-bottom: 50px;
+}
+
+h2 {
+  font-family: 'Castellar', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 30px;
+  margin-bottom: 20px;
+}
 button {
   padding: 10px 20px;
   margin-bottom: 10px;
@@ -46,11 +57,6 @@ button {
   background-color: #007BFF;
   color: white;
   font-size: 16px;
-}
-
-h1 {
-  font-family: 'Edwardian Script ITC', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 60px;
 }
 
 button:hover {
@@ -111,4 +117,8 @@ tr:hover {
 
 .close:hover {
   color: black;
+}
+
+html{
+  background-color: lightseagreen;
 }
