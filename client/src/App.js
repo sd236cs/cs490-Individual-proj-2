@@ -29,6 +29,12 @@ function App() {
     const [searchError, setSearchError] = useState(""); // Error during search
     const [showSearchResults, setShowSearchResults] = useState(false); // Toggle search results display
 
+    //feature 7
+    // Feature 7: Rent a Film
+    const [filmId, setFilmId] = useState(""); // Film ID to rent
+    const [customerId, setCustomerId] = useState(""); // Customer ID
+    const [staffId, setStaffId] = useState(""); // Staff ID (who is renting out the film)
+    const [rentMessage, setRentMessage] = useState(""); // Success/Error message
     const handleInputChange = (e) => {
         setStoreId(e.target.value);
         setErrorMessage(""); // Clear any previous error messages
@@ -171,6 +177,28 @@ function App() {
         } catch (error) {
             console.error("Error performing search:", error);
             setSearchError("An error occurred during the search. Please try again.");
+        }
+    };
+
+    //feature 7
+
+    // Function to handle renting a film
+    const rentFilm = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await axios.post("http://localhost:5000/rent-film", {
+                filmId,
+                customerId,
+                staffId,
+            });
+
+            // Handle success response
+            setRentMessage(response.data.message); // e.g., "Film rented successfully!"
+        } catch (error) {
+            // Handle error
+            console.error("Error renting film:", error);
+            setRentMessage(error.response?.data?.error || "An error occurred. Please try again.");
         }
     };
 
@@ -434,8 +462,52 @@ function App() {
                     </div>
                 )}
             </div>
+
+            {/* FEATURE 7 */}
+            <div className="rent-film-form">
+                <h3>Rent a Film</h3>
+                <form onSubmit={rentFilm}>
+                    {/* Film ID */}
+                    <label>
+                        Film ID:
+                        <input
+                            type="text"
+                            value={filmId}
+                            onChange={(e) => setFilmId(e.target.value)}
+                            required
+                        />
+                    </label>
+
+                    {/* Customer ID */}
+                    <label>
+                        Customer ID:
+                        <input
+                            type="text"
+                            value={customerId}
+                            onChange={(e) => setCustomerId(e.target.value)}
+                            required
+                        />
+                    </label>
+
+                    {/* Staff ID */}
+                    <label>
+                        Staff ID:
+                        <input
+                            type="text"
+                            value={staffId}
+                            onChange={(e) => setStaffId(e.target.value)}
+                            required
+                        />
+                    </label>
+
+                    {/* Submit Button */}
+                    <button type="submit">Rent Film</button>
+                </form>
+
+                {/* Rent Result Message */}
+                {rentMessage && <p>{rentMessage}</p>}
+            </div>
         </div>
     );
 }
-
 export default App;

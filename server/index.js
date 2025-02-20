@@ -262,6 +262,60 @@ app.get("/search-films", async (req, res) => {
     }
 });
 
+//feature 7
+
+app.post("/rent-film", async (req, res) => {
+    // Get the required details from the request body
+    const { filmId, customerId, staffId } = req.body;
+
+    // Step 1: Validate Inputs
+    if (!filmId || !customerId || !staffId) {
+        return res.status(400).json({ error: "Film ID, Customer ID, and Staff ID are required." });
+    }
+
+    try {
+        // Start the MySQL transaction
+        await connection.beginTransaction();
+
+        // Step 2: Check film availability in inventory
+        const queryCheckAvailability = `
+            SELECT i.inventory_id
+            FROM inventory i
+            LEFT JOIN rental r ON i.inventory_id = r.inventory_id AND r.return_date IS NULL
+            WHERE i.film_id = ? AND r.inventory_id IS NULL
+            LIMIT 1;
+        `;
+        const [inventoryRows] = await connection.execute(queryCheckAvailability, [filmId]);
+
+        if (inventoryRows.length === 0) {
+            // If the film is not available
+            await connection.rollback(); // Rollback transaction
+            return res.status(400).json({ error: "This film is currently not available for rent." });
+        }
+
+        // Get the available inventory ID
+        const inventoryId = inventoryRows[0].inventory_id;
+
+        // Step 3: Insert into rental table
+        const queryInsertRental = `
+            INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id)
+            VALUES (NOW(), ?, ?, ?);
+        `;
+        await connection.execute(queryInsertRental, [inventoryId, customerId, staffId]);
+
+        // Commit the transaction
+        await connection.commit();
+
+        // Step 4: Respond with success
+        res.json({ message: "Film rented successfully!" });
+    } catch (error) {
+        console.error("Error renting film:", error);
+        await connection.rollback(); // Rollback transaction in case of an error
+        res.status(500).json({ error: "An error occurred while renting the film. Please try again." });
+    }
+});
+
+
 // Start the server
 const PORT = 5000;
 app.listen(PORT, () => {
