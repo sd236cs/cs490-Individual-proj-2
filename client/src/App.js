@@ -30,11 +30,11 @@ function App() {
     const [showSearchResults, setShowSearchResults] = useState(false); // Toggle search results display
 
     //feature 7
-    // Feature 7: Rent a Film
-    const [filmId, setFilmId] = useState(""); // Film ID to rent
-    const [customerId, setCustomerId] = useState(""); // Customer ID
-    const [staffId, setStaffId] = useState(""); // Staff ID (who is renting out the film)
-    const [rentMessage, setRentMessage] = useState(""); // Success/Error message
+    const [movieIdentifier, setMovieIdentifier] = useState("");
+    const [customerId, setCustomerId] = useState("");
+    const [staffId, setStaffId] = useState("");
+    const [message, setMessage] = useState("");
+
     const handleInputChange = (e) => {
         setStoreId(e.target.value);
         setErrorMessage(""); // Clear any previous error messages
@@ -181,26 +181,36 @@ function App() {
     };
 
     //feature 7
-
-    // Function to handle renting a film
-    const rentFilm = async (e) => {
+    const handleRentMovie = async (e) => {
         e.preventDefault();
+        setMessage("");
 
         try {
-            const response = await axios.post("http://localhost:5000/rent-film", {
-                filmId,
-                customerId,
-                staffId,
-            });
+            const response = await axios.post("http://localhost:5000/rent-movie",
+                {
+                    inventoryId: movieIdentifier.match(/^\d+$/) ? movieIdentifier : null,
+                    movieName: isNaN(movieIdentifier) ? movieIdentifier : null,
+                    customerId: customerId,
+                    staffId: staffId,
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json", // Ensure this header is set
+                    },
+                }
+            );
 
-            // Handle success response
-            setRentMessage(response.data.message); // e.g., "Film rented successfully!"
+
+            setMessage(response.data.message);
         } catch (error) {
-            // Handle error
-            console.error("Error renting film:", error);
-            setRentMessage(error.response?.data?.error || "An error occurred. Please try again.");
+            if (error.response) {
+                setMessage(error.response.data.error || "Error occurred while renting the movie.");
+            } else {
+                setMessage("Error occurred while contacting the server.");
+            }
         }
     };
+
 
     return (
         <div className="App">
@@ -464,48 +474,42 @@ function App() {
             </div>
 
             {/* FEATURE 7 */}
-            <div className="rent-film-form">
-                <h3>Rent a Film</h3>
-                <form onSubmit={rentFilm}>
-                    {/* Film ID */}
-                    <label>
-                        Film ID:
+            <div className="rent-movie-section">
+                <h2>Rent a Movie</h2>
+                <form onSubmit={handleRentMovie}>
+                    <div>
+                        <label>Movie Inventory ID or Name:</label>
                         <input
                             type="text"
-                            value={filmId}
-                            onChange={(e) => setFilmId(e.target.value)}
+                            value={movieIdentifier}
+                            onChange={(e) => setMovieIdentifier(e.target.value)}
+                            placeholder="Enter inventory ID or movie name"
                             required
                         />
-                    </label>
-
-                    {/* Customer ID */}
-                    <label>
-                        Customer ID:
+                    </div>
+                    <div>
+                        <label>Customer ID:</label>
                         <input
-                            type="text"
+                            type="number"
                             value={customerId}
                             onChange={(e) => setCustomerId(e.target.value)}
+                            placeholder="Enter customer ID"
                             required
                         />
-                    </label>
-
-                    {/* Staff ID */}
-                    <label>
-                        Staff ID:
+                    </div>
+                    <div>
+                        <label>Staff ID:</label>
                         <input
-                            type="text"
+                            type="number"
                             value={staffId}
                             onChange={(e) => setStaffId(e.target.value)}
+                            placeholder="Enter staff ID"
                             required
                         />
-                    </label>
-
-                    {/* Submit Button */}
-                    <button type="submit">Rent Film</button>
+                    </div>
+                    <button type="submit">Rent Movie</button>
                 </form>
-
-                {/* Rent Result Message */}
-                {rentMessage && <p>{rentMessage}</p>}
+                {message && <p>{message}</p>}
             </div>
         </div>
     );

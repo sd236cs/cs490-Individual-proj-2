@@ -263,58 +263,61 @@ app.get("/search-films", async (req, res) => {
 });
 
 //feature 7
+// Rent a movie
+app.post("/rent-movie", async (req, res) => {
+    const { inventoryId, movieName, customerId, staffId } = req.body;
 
-app.post("/rent-film", async (req, res) => {
-    // Get the required details from the request body
-    const { filmId, customerId, staffId } = req.body;
+    // Check if required fields are provided
+    if (!inventoryId && !movieName) {
+        return res.status(400).json({ error: "Inventory ID or Movie Name is required." });
+    }
 
-    // Step 1: Validate Inputs
-    if (!filmId || !customerId || !staffId) {
-        return res.status(400).json({ error: "Film ID, Customer ID, and Staff ID are required." });
+    if (!customerId || !staffId) {
+        return res.status(400).json({ error: "Customer ID and Staff ID are required." });
     }
 
     try {
-        // Start the MySQL transaction
-        await connection.beginTransaction();
-
-        // Step 2: Check film availability in inventory
-        const queryCheckAvailability = `
+        let inventoryQuery = `
             SELECT i.inventory_id
             FROM inventory i
-            LEFT JOIN rental r ON i.inventory_id = r.inventory_id AND r.return_date IS NULL
-            WHERE i.film_id = ? AND r.inventory_id IS NULL
+            JOIN film f ON i.film_id = f.film_id
+            WHERE i.inventory_id = ? OR f.title = ?
             LIMIT 1;
         `;
-        const [inventoryRows] = await connection.execute(queryCheckAvailability, [filmId]);
 
-        if (inventoryRows.length === 0) {
-            // If the film is not available
-            await connection.rollback(); // Rollback transaction
-            return res.status(400).json({ error: "This film is currently not available for rent." });
+        // Fetch inventory ID if movie name is provided
+        const [inventoryResult] = await connection.query(inventoryQuery, [inventoryId || null, movieName || null]);
+        if (inventoryResult.length === 0) {
+            return res.status(404).json({ error: "Movie not found or not available." });
         }
 
-        // Get the available inventory ID
-        const inventoryId = inventoryRows[0].inventory_id;
+        const movieInventoryId = inventoryResult[0].inventory_id;
 
-        // Step 3: Insert into rental table
-        const queryInsertRental = `
-            INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id)
-            VALUES (NOW(), ?, ?, ?);
+        // Check if the movie is already rented out
+        const rentalAvailabilityQuery = `
+            SELECT *
+            FROM rental
+            WHERE inventory_id = ? AND return_date IS NULL
+            LIMIT 1;`;
+        const [rentalAvailability] = await connection.query(rentalAvailabilityQuery, [movieInventoryId]);
+
+        if (rentalAvailability.length > 0) {
+            return res.status(400).json({ error: "Movie is already rented out." });
+        }
+
+        // Insert a new rental record
+        const rentalInsertQuery = `
+            INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id, last_update)
+            VALUES (NOW(), ?, ?, ?, NOW());
         `;
-        await connection.execute(queryInsertRental, [inventoryId, customerId, staffId]);
+        await connection.query(rentalInsertQuery, [movieInventoryId, customerId, staffId]);
 
-        // Commit the transaction
-        await connection.commit();
-
-        // Step 4: Respond with success
-        res.json({ message: "Film rented successfully!" });
+        res.status(201).json({ message: "Movie rented out successfully!" });
     } catch (error) {
-        console.error("Error renting film:", error);
-        await connection.rollback(); // Rollback transaction in case of an error
-        res.status(500).json({ error: "An error occurred while renting the film. Please try again." });
+        console.error("Error renting out the movie:", error);
+        res.status(500).json({ error: "Error occurred while renting the movie. Please try again." });
     }
 });
-
 
 // Start the server
 const PORT = 5000;
