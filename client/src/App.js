@@ -30,10 +30,16 @@ function App() {
     const [showSearchResults, setShowSearchResults] = useState(false); // Toggle search results display
 
     //feature 7
-    const [movieIdentifier, setMovieIdentifier] = useState("");
+    /* const [movieIdentifier, setMovieIdentifier] = useState("");
     const [customerId, setCustomerId] = useState("");
     const [staffId, setStaffId] = useState("");
-    const [message, setMessage] = useState("");
+    const [message, setMessage] = useState(""); */
+
+    //feature 8
+    const [customers, setCustomers] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [loading, setLoading] = useState(false);
 
     const handleInputChange = (e) => {
         setStoreId(e.target.value);
@@ -181,7 +187,7 @@ function App() {
     };
 
     //feature 7
-    const handleRentMovie = async (e) => {
+    /*const handleRentMovie = async (e) => {
         e.preventDefault();
         setMessage("");
 
@@ -209,8 +215,34 @@ function App() {
                 setMessage("Error occurred while contacting the server.");
             }
         }
-    };
+    }; */
 
+    //feature 8
+
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            setLoading(true);
+            try {
+                const response = await axios.get("http://localhost:5000/customers", {
+                    params: { page: currentPage },
+                });
+                setCustomers(response.data.customers);
+                setTotalPages(response.data.totalPages);
+            } catch (error) {
+                console.error("Error fetching customers:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCustomers();
+    }, [currentPage]);
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+        }
+    };
 
     return (
         <div className="App">
@@ -474,6 +506,7 @@ function App() {
             </div>
 
             {/* FEATURE 7 */}
+            {/*
             <div className="rent-movie-section">
                 <h2>Rent a Movie</h2>
                 <form onSubmit={handleRentMovie}>
@@ -510,7 +543,50 @@ function App() {
                     <button type="submit">Rent Movie</button>
                 </form>
                 {message && <p>{message}</p>}
+            </div>*/}
+
+            {/* FEATURE 8 */}
+            <div className="App">
+                {/* ... other components ... */}
+                <h2>Customer List</h2>
+                {loading && <p>Loading...</p>}
+                {!loading && (
+                    <div>
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Customer ID</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Email</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {customers.map((customer) => (
+                                <tr key={customer.customer_id}>
+                                    <td>{customer.customer_id}</td>
+                                    <td>{customer.first_name}</td>
+                                    <td>{customer.last_name}</td>
+                                    <td>{customer.email}</td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                        <div>
+                            <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
+                                Previous
+                            </button>
+                            <span>
+                            Page {currentPage} of {totalPages}
+                        </span>
+                            <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
+
         </div>
     );
 }

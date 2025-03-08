@@ -264,58 +264,36 @@ app.get("/search-films", async (req, res) => {
 
 //feature 7
 // Rent a movie
-app.post("/rent-movie", async (req, res) => {
-    const { inventoryId, movieName, customerId, staffId } = req.body;
 
-    // Check if required fields are provided
-    if (!inventoryId && !movieName) {
-        return res.status(400).json({ error: "Inventory ID or Movie Name is required." });
-    }
-
-    if (!customerId || !staffId) {
-        return res.status(400).json({ error: "Customer ID and Staff ID are required." });
-    }
+//feature 8
+// In your Express.js backend (e.g., your app.js or routes file)
+app.get("/customers", async (req, res) => {
+    const page = parseInt(req.query.page) || 1; // Current page number (default to 1)
+    const limit = parseInt(req.query.limit) || 10; // Number of items per page (default to 10)
+    const offset = (page - 1) * limit;
 
     try {
-        let inventoryQuery = `
-            SELECT i.inventory_id
-            FROM inventory i
-            JOIN film f ON i.film_id = f.film_id
-            WHERE i.inventory_id = ? OR f.title = ?
-            LIMIT 1;
-        `;
+        // Query to fetch customers with pagination
+        const [customers] = await connection.query(
+            "SELECT customer_id, first_name, last_name, email FROM customer LIMIT ? OFFSET ?",
+            [limit, offset]
+        );
 
-        // Fetch inventory ID if movie name is provided
-        const [inventoryResult] = await connection.query(inventoryQuery, [inventoryId || null, movieName || null]);
-        if (inventoryResult.length === 0) {
-            return res.status(404).json({ error: "Movie not found or not available." });
-        }
+        // Query to count total customers
+        const [totalCustomersResult] = await connection.query(
+            "SELECT COUNT(*) AS total FROM customer"
+        );
+        const totalCustomers = totalCustomersResult[0].total;
 
-        const movieInventoryId = inventoryResult[0].inventory_id;
-
-        // Check if the movie is already rented out
-        const rentalAvailabilityQuery = `
-            SELECT *
-            FROM rental
-            WHERE inventory_id = ? AND return_date IS NULL
-            LIMIT 1;`;
-        const [rentalAvailability] = await connection.query(rentalAvailabilityQuery, [movieInventoryId]);
-
-        if (rentalAvailability.length > 0) {
-            return res.status(400).json({ error: "Movie is already rented out." });
-        }
-
-        // Insert a new rental record
-        const rentalInsertQuery = `
-            INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id, last_update)
-            VALUES (NOW(), ?, ?, ?, NOW());
-        `;
-        await connection.query(rentalInsertQuery, [movieInventoryId, customerId, staffId]);
-
-        res.status(201).json({ message: "Movie rented out successfully!" });
+        res.json({
+            customers,
+            totalCustomers,
+            currentPage: page,
+            totalPages: Math.ceil(totalCustomers / limit),
+        });
     } catch (error) {
-        console.error("Error renting out the movie:", error);
-        res.status(500).json({ error: "Error occurred while renting the movie. Please try again." });
+        console.error("Error fetching customers:", error);
+        res.status(500).json({ error: "Error fetching customers" });
     }
 });
 
