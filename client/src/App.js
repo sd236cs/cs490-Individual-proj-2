@@ -41,6 +41,22 @@ function App() {
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
 
+    //feature 9
+    const [searchCustomerId, setSearchCustomerId] = useState("");
+    const [searchFirstName, setSearchFirstName] = useState("");
+    const [searchLastName, setSearchLastName] = useState("");
+    const [searchResults9, setSearchResults9] = useState([]);
+    const [searchError9, setSearchError9] = useState("");
+
+    //feature 10
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [email, setEmail] = useState("");
+    const [addressId, setAddressId] = useState("");
+    const [active, setActive] = useState(1);
+    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
+
     const handleInputChange = (e) => {
         setStoreId(e.target.value);
         setErrorMessage(""); // Clear any previous error messages
@@ -238,9 +254,71 @@ function App() {
         fetchCustomers();
     }, [currentPage]);
 
+    //feature 9
+
+    const handleCustSearch = async () => {
+        try {
+            const response = await axios.get("http://localhost:5000/search-customers", {
+                params: {
+                    customerId: searchCustomerId,
+                    firstName: searchFirstName,
+                    lastName: searchLastName,
+                },
+            });
+            setSearchResults9(response.data);
+            setSearchError9("");
+        } catch (error) {
+            console.error("Error searching customers:", error);
+            setSearchError9("Error searching customers. Please try again.");
+            setSearchResults9([]);
+        }
+    };
+
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= totalPages) {
             setCurrentPage(newPage);
+        }
+    };
+
+    //feature 10
+
+    const handleSubmit10 = async (e) => {
+        e.preventDefault();
+        setMessage("");
+        setError("");
+
+        try {
+            console.log({
+                firstName,
+                lastName,
+                email,
+                addressId,
+                storeId,
+                active,
+            });
+
+            const response = await axios.post("http://localhost:5000/customers", {
+                firstName,
+                lastName,
+                email,
+                addressId,
+                storeId,
+                active,
+            });
+
+            setMessage(response.data.message);
+            setFirstName("");
+            setLastName("");
+            setEmail("");
+            setAddressId("");
+            setStoreId("");
+            setActive(1);
+        } catch (err) {
+            if (err.response) {
+                setError(err.response.data.error);
+            } else {
+                setError("An error occurred. Please try again.");
+            }
         }
     };
 
@@ -546,7 +624,7 @@ function App() {
             </div>*/}
 
             {/* FEATURE 8 */}
-            <div className="App">
+            <div className="Feature8">
                 {/* ... other components ... */}
                 <h2>Customer List</h2>
                 {loading && <p>Loading...</p>}
@@ -587,6 +665,95 @@ function App() {
                 )}
             </div>
 
+            {/* FEATURE 9 */}
+            <div className="feature9">
+                <h2>Customer Search</h2>
+                <div>
+                    <input
+                        type="text"
+                        placeholder="Customer ID"
+                        value={searchCustomerId}
+                        onChange={(e) => setSearchCustomerId(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="First Name"
+                        value={searchFirstName}
+                        onChange={(e) => setSearchFirstName(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Last Name"
+                        value={searchLastName}
+                        onChange={(e) => setSearchLastName(e.target.value)}
+                    />
+                    <button onClick={handleCustSearch}>Search</button>
+                </div>
+
+                {searchError9 && <p style={{ color: "red" }}>{searchError9}</p>}
+
+                {searchResults9.length > 0 && (
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Customer ID</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Email</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {searchResults9.map((customer) => (
+                            <tr key={customer.customer_id}>
+                                <td>{customer.customer_id}</td>
+                                <td>{customer.first_name}</td>
+                                <td>{customer.last_name}</td>
+                                <td>{customer.email}</td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+
+            {/* FEATURE 10 */}
+
+            <div>
+                <h2>Add New Customer</h2>
+                <form onSubmit={handleSubmit10}>
+                    <div>
+                        <label>First Name:</label>
+                        <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                    </div>
+                    <div>
+                        <label>Last Name:</label>
+                        <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                    </div>
+                    <div>
+                        <label>Email:</label>
+                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    </div>
+                    <div>
+                        <label>Address ID:</label>
+                        <input type="number" value={addressId} onChange={(e) => setAddressId(e.target.value)} />
+                    </div>
+                    <div>
+                        <label>Store ID:</label>
+                        <input type="number" value={storeId} onChange={(e) => setStoreId(e.target.value)} />
+                    </div>
+                    <div>
+                        <label>Active:</label>
+                        <select value={active} onChange={(e) => setActive(parseInt(e.target.value))}>
+                            <option value={1}>Active</option>
+                            <option value={0}>Inactive</option>
+                        </select>
+                    </div>
+                    <button type="submit">Add Customer</button>
+                </form>
+
+                {message && <p style={{ color: "green" }}>{message}</p>}
+                {error && <p style={{ color: "red" }}>{error}</p>}
+            </div>
         </div>
     );
 }

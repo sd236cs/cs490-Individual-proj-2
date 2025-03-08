@@ -5,6 +5,7 @@ import cors from "cors";
 // Create an express app
 const app = express();
 app.use(cors());
+app.use(express.json());
 
 // Create a MySQL connection using the promise API
 const connection = await mysql.createPool({
@@ -125,10 +126,10 @@ app.get('/film/:id', async (req, res) => {
 // feature 4
 app.get("/actors-list", async (req, res) => {
     try {
-        console.log("Fetching actors from the database...");
+        //console.log("Fetching actors from the database...");
         const query = `SELECT first_name, last_name FROM actor ORDER BY first_name, last_name`;
         const [rows] = await connection.query(query);
-        console.log("Query successful. Data fetched:", rows);
+        //console.log("Query successful. Data fetched:", rows);
         res.json(rows);
     } catch (error) {
         console.error("Error fetching actors list:", error);
@@ -266,7 +267,6 @@ app.get("/search-films", async (req, res) => {
 // Rent a movie
 
 //feature 8
-// In your Express.js backend (e.g., your app.js or routes file)
 app.get("/customers", async (req, res) => {
     const page = parseInt(req.query.page) || 1; // Current page number (default to 1)
     const limit = parseInt(req.query.limit) || 10; // Number of items per page (default to 10)
@@ -294,6 +294,62 @@ app.get("/customers", async (req, res) => {
     } catch (error) {
         console.error("Error fetching customers:", error);
         res.status(500).json({ error: "Error fetching customers" });
+    }
+});
+
+//feature 9
+
+app.get("/search-customers", async (req, res) => {
+    const customerId = req.query.customerId;
+    const firstName = req.query.firstName;
+    const lastName = req.query.lastName;
+
+    let query = "SELECT customer_id, first_name, last_name, email FROM customer WHERE 1=1"; // 1=1 for easy AND clauses
+    const queryParams = [];
+
+    if (customerId) {
+        query += " AND customer_id = ?";
+        queryParams.push(customerId);
+    }
+    if (firstName) {
+        query += " AND first_name LIKE ?";
+        queryParams.push(`%${firstName}%`);
+    }
+    if (lastName) {
+        query += " AND last_name LIKE ?";
+        queryParams.push(`%${lastName}%`);
+    }
+
+    try {
+        const [customers] = await connection.query(query, queryParams);
+        res.json(customers);
+    } catch (error) {
+        console.error("Error searching customers:", error);
+        res.status(500).json({ error: "Error searching customers" });
+    }
+});
+
+//feature 10
+
+// In your Express.js backend
+app.post("/customers", async (req, res) => {
+    const { firstName, lastName, email, addressId, storeId, active } = req.body; // Extract from request body
+
+    // Basic input validation
+    if (!firstName || !lastName || !email) {
+        return res.status(400).json({ error: "First name, last name, and email are required." });
+    }
+
+    try {
+        const [result] = await connection.query(
+            "INSERT INTO customer (first_name, last_name, email, address_id, store_id, active, create_date) VALUES (?, ?, ?, ?, ?, ?, NOW())",
+            [firstName, lastName, email, addressId, storeId, active]
+        );
+
+        res.status(201).json({ message: "Customer added successfully", customerId: result.insertId });
+    } catch (error) {
+        console.error("Error adding customer:", error);
+        res.status(500).json({ error: "Error adding customer. Please try again." });
     }
 });
 
