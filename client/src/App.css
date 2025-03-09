@@ -228,3 +228,17 @@ p.error {
 form {
   animation: fadeIn 0.4s ease-in-out;
 }
+
+input {
+  width:max-content;
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+.Delete {
+  background-color: orangered;
+}

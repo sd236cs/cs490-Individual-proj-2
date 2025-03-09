@@ -393,6 +393,28 @@ app.put("/customers/:customerId", async (req, res) => {
     }
 });
 
+//feature 12
+
+app.delete("/customers/:customerId", async (req, res) => {
+    const { customerId } = req.params;
+
+    try {
+        const [result] = await connection.query(
+            "DELETE FROM customer WHERE customer_id = ?",
+            [customerId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Customer not found." });
+        }
+
+        res.json({ message: "Customer deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting customer:", error);
+        res.status(500).json({ error: "Error deleting customer." });
+    }
+});
+
 // Start the server
 const PORT = 5000;
 app.listen(PORT, () => {

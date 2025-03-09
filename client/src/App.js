@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, {useEffect, useState} from "react";
 import "./App.css";
 import axios from "axios";
 
@@ -261,6 +261,13 @@ function App() {
     //feature 9
 
     const handleCustSearch = async () => {
+        if (!searchCustomerId && !searchFirstName && !searchLastName) {
+            // All fields are blank, clear results and return
+            setSearchResults9([]);
+            setSearchError9("");
+            return;
+        }
+
         try {
             const response = await axios.get("http://localhost:5000/search-customers", {
                 params: {
@@ -353,13 +360,26 @@ function App() {
     const handleInputChangeEdit = (e) => {
         //console.log("Name:", e.target.name, "Value:", e.target.value);
         setEditCustomer((prevCustomer) => {
-            const updatedCustomer = {
+            //console.log("Updated Customer:", updatedCustomer);
+            return {
                 ...prevCustomer,
                 [e.target.name]: e.target.value,
             };
-            //console.log("Updated Customer:", updatedCustomer);
-            return updatedCustomer;
         });
+    };
+
+    //feature 12
+
+    const handleDeleteCustomer = async (customerId) => {
+        if (window.confirm("Are you sure you want to delete this customer?")) {
+            try {
+                await axios.delete(`http://localhost:5000/customers/${customerId}`);
+                fetchCustomers(); // Refresh customer list
+            } catch (error) {
+                console.error("Error deleting customer:", error);
+                alert("Error deleting customer. Please try again.");
+            }
+        }
     };
 
     return (
@@ -643,7 +663,7 @@ function App() {
                 {message && <p>{message}</p>}
             </div>*/}
 
-            {/* FEATURE 8 & 11 */}
+            {/* FEATURE 8, 11, 12 */}
             <div className="Feature8">
                 <h2>Customer List</h2>
                 {loading && <p>Loading...</p>}
@@ -668,6 +688,7 @@ function App() {
                                     <td>{customer.email}</td>
                                     <td>
                                         <button onClick={() => handleEditCustomer(customer.customer_id)}>Edit</button>
+                                        <button className="Delete" onClick={() => handleDeleteCustomer(customer.customer_id)}>Delete</button>
                                     </td>
                                 </tr>
                             ))}
