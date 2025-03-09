@@ -353,6 +353,46 @@ app.post("/customers", async (req, res) => {
     }
 });
 
+//feature 11
+
+app.get("/customers/:customerId", async (req, res) => {
+    const { customerId } = req.params;
+    try {
+        const [rows] = await connection.query(
+            "SELECT customer_id, first_name, last_name, email, address_id, store_id, active FROM customer WHERE customer_id = ?",
+            [customerId]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "Customer not found." });
+        }
+        res.json(rows);
+    } catch (error) {
+        console.error("Error fetching customer:", error);
+        res.status(500).json({ error: "Error fetching customer." });
+    }
+});
+
+app.put("/customers/:customerId", async (req, res) => {
+    const { customerId } = req.params;
+    const { first_name, last_name, email, address_id, store_id, active } = req.body;
+
+    try {
+        const [result] = await connection.query(
+            "UPDATE customer SET first_name = ?, last_name = ?, email = ?, address_id = ?, store_id = ?, active = ?, last_update = NOW() WHERE customer_id = ?",
+            [first_name, last_name, email, address_id, store_id, active, customerId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Customer not found." });
+        }
+
+        res.json({ message: "Customer updated successfully." });
+    } catch (error) {
+        console.error("Error updating customer:", error);
+        res.status(500).json({ error: "Error updating customer." });
+    }
+});
+
 // Start the server
 const PORT = 5000;
 app.listen(PORT, () => {

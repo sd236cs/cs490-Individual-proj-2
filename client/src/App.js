@@ -57,6 +57,10 @@ function App() {
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
+    //feature 11
+    const [editCustomer, setEditCustomer] = useState(null); // Customer being edited
+    const [editFormVisible, setEditFormVisible] = useState(false);
+
     const handleInputChange = (e) => {
         setStoreId(e.target.value);
         setErrorMessage(""); // Clear any previous error messages
@@ -235,22 +239,22 @@ function App() {
 
     //feature 8
 
-    useEffect(() => {
-        const fetchCustomers = async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get("http://localhost:5000/customers", {
-                    params: { page: currentPage },
-                });
-                setCustomers(response.data.customers);
-                setTotalPages(response.data.totalPages);
-            } catch (error) {
-                console.error("Error fetching customers:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchCustomers = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get("http://localhost:5000/customers", {
+                params: { page: currentPage },
+            });
+            setCustomers(response.data.customers);
+            setTotalPages(response.data.totalPages);
+        } catch (error) {
+            console.error("Error fetching customers:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchCustomers();
     }, [currentPage]);
 
@@ -288,14 +292,14 @@ function App() {
         setError("");
 
         try {
-            console.log({
+            /*console.log({
                 firstName,
                 lastName,
                 email,
                 addressId,
                 storeId,
                 active,
-            });
+            }); */
 
             const response = await axios.post("http://localhost:5000/customers", {
                 firstName,
@@ -322,10 +326,45 @@ function App() {
         }
     };
 
+    //feature 11
+
+    const handleEditCustomer = async (customerId) => {
+        try {
+            const response = await axios.get(`http://localhost:5000/customers/${customerId}`);
+            setEditCustomer(response.data[0]);
+            setEditFormVisible(true);
+        } catch (error) {
+            console.error("Error fetching customer details:", error);
+        }
+    };
+
+    const handleUpdateCustomer = async (e) => {
+        e.preventDefault();
+        try {
+            //console.log("Before put request in handleUpdateCustomer:", editCustomer);
+            await axios.put(`http://localhost:5000/customers/${editCustomer.customer_id}`, editCustomer);
+            setEditFormVisible(false);
+            await fetchCustomers(); // Refresh customer list
+        } catch (error) {
+            console.error("Error updating customer:", error);
+        }
+    };
+
+    const handleInputChangeEdit = (e) => {
+        //console.log("Name:", e.target.name, "Value:", e.target.value);
+        setEditCustomer((prevCustomer) => {
+            const updatedCustomer = {
+                ...prevCustomer,
+                [e.target.name]: e.target.value,
+            };
+            //console.log("Updated Customer:", updatedCustomer);
+            return updatedCustomer;
+        });
+    };
+
     return (
         <div className="App">
             <h1>Landing Page</h1>
-            {/* Menu */}
 
             {/* FEATURE 1&2 */}
             <h2>Top 5 Rented Films</h2>
@@ -623,9 +662,8 @@ function App() {
                 {message && <p>{message}</p>}
             </div>*/}
 
-            {/* FEATURE 8 */}
+            {/* FEATURE 8 & 11 */}
             <div className="Feature8">
-                {/* ... other components ... */}
                 <h2>Customer List</h2>
                 {loading && <p>Loading...</p>}
                 {!loading && (
@@ -637,6 +675,7 @@ function App() {
                                 <th>First Name</th>
                                 <th>Last Name</th>
                                 <th>Email</th>
+                                <th>Edit</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -646,11 +685,14 @@ function App() {
                                     <td>{customer.first_name}</td>
                                     <td>{customer.last_name}</td>
                                     <td>{customer.email}</td>
+                                    <td>
+                                        <button onClick={() => handleEditCustomer(customer.customer_id)}>Edit</button>
+                                    </td>
                                 </tr>
                             ))}
                             </tbody>
                         </table>
-                        <div>
+                        <div className="Pagination">
                             <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
                                 Previous
                             </button>
@@ -664,6 +706,27 @@ function App() {
                     </div>
                 )}
             </div>
+
+            {editFormVisible && editCustomer && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h2>Edit Customer</h2>
+                        <form onSubmit={handleUpdateCustomer}>
+                            <input type="text" name="first_name" value={editCustomer.first_name} onChange={handleInputChangeEdit} placeholder="First Name" />
+                            <input type="text" name="last_name" value={editCustomer.last_name} onChange={handleInputChangeEdit} placeholder="Last Name" />
+                            <input type="email" name="email" value={editCustomer.email} onChange={handleInputChangeEdit} placeholder="Email" />
+                            <input type="number" name="address_id" value={editCustomer.address_id} onChange={handleInputChangeEdit} placeholder="Address ID" />
+                            <input type="number" name="store_id" value={editCustomer.store_id} onChange={handleInputChangeEdit} placeholder="Store ID" />
+                            <select name="active" value={editCustomer.active} onChange={handleInputChangeEdit}>
+                                <option value={1}>Active</option>
+                                <option value={0}>Inactive</option>
+                            </select>
+                            <button type="submit">Update</button>
+                            <button onClick={() => setEditFormVisible(false)}>Cancel</button>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* FEATURE 9 */}
             <div className="feature9">
@@ -754,6 +817,10 @@ function App() {
                 {message && <p style={{ color: "green" }}>{message}</p>}
                 {error && <p style={{ color: "red" }}>{error}</p>}
             </div>
+
+            {/* FEATURE 12 */}
+
+
         </div>
     );
 }
