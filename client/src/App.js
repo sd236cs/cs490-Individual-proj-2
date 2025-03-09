@@ -66,6 +66,12 @@ function App() {
         setErrorMessage(""); // Clear any previous error messages
     };
 
+    //feature 13
+
+    const [customerDetails, setCustomerDetails] = useState(null);
+    const [rentalHistory, setRentalHistory] = useState([]);
+    const [showCustomerDetailsModal, setShowCustomerDetailsModal] = useState(false);
+
     // Fetch top 5 actors for the provided Store ID
     const fetchTopActors = async () => {
         try {
@@ -382,6 +388,23 @@ function App() {
         }
     };
 
+    //feature 13
+
+    const handleViewCustomerDetails = async (customerId) => {
+        try {
+            const detailsResponse = await axios.get(`http://localhost:5000/customers/${customerId}/details`);
+            setCustomerDetails(detailsResponse.data);
+
+            const rentalsResponse = await axios.get(`http://localhost:5000/customers/${customerId}/rentals`);
+            setRentalHistory(rentalsResponse.data);
+
+            setShowCustomerDetailsModal(true);
+        } catch (error) {
+            console.error("Error fetching customer details or rentals:", error);
+            alert("Error fetching customer details. Please try again.");
+        }
+    };
+
     return (
         <div className="App">
             <h1>Landing Page</h1>
@@ -681,14 +704,14 @@ function App() {
                             </thead>
                             <tbody>
                             {customers.map((customer) => (
-                                <tr key={customer.customer_id}>
+                                <tr key={customer.customer_id} onClick={() => handleViewCustomerDetails(customer.customer_id)} style={{ cursor: "pointer" }}>
                                     <td>{customer.customer_id}</td>
                                     <td>{customer.first_name}</td>
                                     <td>{customer.last_name}</td>
                                     <td>{customer.email}</td>
                                     <td>
-                                        <button onClick={() => handleEditCustomer(customer.customer_id)}>Edit</button>
-                                        <button className="Delete" onClick={() => handleDeleteCustomer(customer.customer_id)}>Delete</button>
+                                        <button onClick={(e) => { e.stopPropagation(); handleEditCustomer(customer.customer_id)}}>Edit</button>
+                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteCustomer(customer.customer_id)}}>Delete</button>
                                     </td>
                                 </tr>
                             ))}
@@ -726,6 +749,47 @@ function App() {
                             <button type="submit">Update</button>
                             <button onClick={() => setEditFormVisible(false)}>Cancel</button>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/*FEATURE 13*/}
+
+            {showCustomerDetailsModal && customerDetails && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <span className="close" onClick={() => setShowCustomerDetailsModal(false)}>&times;</span>
+                        <h2>Customer Details</h2>
+                        <p><strong>Customer ID:</strong> {customerDetails.customer_id}</p>
+                        <p><strong>First Name:</strong> {customerDetails.first_name}</p>
+                        <p><strong>Last Name:</strong> {customerDetails.last_name}</p>
+                        <p><strong>Email:</strong> {customerDetails.email}</p>
+
+                        <h3>Rental History</h3>
+                        {rentalHistory.length > 0 ? (
+                            <table>
+                                <thead>
+                                <tr>
+                                    <th>Rental ID</th>
+                                    <th>Film Title</th>
+                                    <th>Rental Date</th>
+                                    <th>Return Date</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {rentalHistory.map((rental) => (
+                                    <tr key={rental.rental_id}>
+                                        <td>{rental.rental_id}</td>
+                                        <td>{rental.title}</td>
+                                        <td>{rental.rental_date}</td>
+                                        <td>{rental.return_date || "Not Returned"}</td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <p>No rental history found.</p>
+                        )}
                     </div>
                 </div>
             )}

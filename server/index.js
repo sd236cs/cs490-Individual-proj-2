@@ -415,6 +415,48 @@ app.delete("/customers/:customerId", async (req, res) => {
     }
 });
 
+//feature 13
+
+app.get("/customers/:customerId/details", async (req, res) => {
+    const { customerId } = req.params;
+
+    try {
+        const [customer] = await connection.query(
+            "SELECT * FROM customer WHERE customer_id = ?",
+            [customerId]
+        );
+
+        if (customer.length === 0) {
+            return res.status(404).json({ error: "Customer not found." });
+        }
+
+        res.json(customer[0]);
+    } catch (error) {
+        console.error("Error fetching customer details:", error);
+        res.status(500).json({ error: "Error fetching customer details." });
+    }
+});
+
+app.get("/customers/:customerId/rentals", async (req, res) => {
+    const { customerId } = req.params;
+
+    try {
+        const [rentals] = await connection.query(
+            `SELECT rental.*, film.title, inventory.inventory_id
+             FROM rental
+             JOIN inventory ON rental.inventory_id = inventory.inventory_id
+             JOIN film ON inventory.film_id = film.film_id
+             WHERE rental.customer_id = ?`,
+            [customerId]
+        );
+
+        res.json(rentals);
+    } catch (error) {
+        console.error("Error fetching rental history:", error);
+        res.status(500).json({ error: "Error fetching rental history." });
+    }
+});
+
 // Start the server
 const PORT = 5000;
 app.listen(PORT, () => {
