@@ -264,7 +264,31 @@ app.get("/search-films", async (req, res) => {
 });
 
 //feature 7
-// Rent a movie
+app.post("/rentals", async (req, res) => {
+    const { customerId, inventoryId, staffId } = req.body;
+
+    try {
+        // Check if inventory item is available
+        const [inventoryCheck] = await connection.query(
+            "SELECT * FROM inventory WHERE inventory_id = ? AND inventory_id NOT IN (SELECT inventory_id FROM rental WHERE return_date IS NULL)",
+            [inventoryId]
+        );
+
+        if (inventoryCheck.length === 0) {
+            return res.status(400).json({ error: "Inventory item not available." });
+        }
+
+        const [result] = await connection.query(
+            "INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id) VALUES (NOW(), ?, ?, ?)",
+            [inventoryId, customerId, staffId]
+        );
+
+        res.json({ message: "Rental created successfully.", rentalId: result.insertId });
+    } catch (error) {
+        console.error("Error creating rental:", error);
+        res.status(500).json({ error: "Error creating rental." });
+    }
+});
 
 //feature 8
 app.get("/customers", async (req, res) => {
@@ -434,6 +458,28 @@ app.get("/customers/:customerId/details", async (req, res) => {
     } catch (error) {
         console.error("Error fetching customer details:", error);
         res.status(500).json({ error: "Error fetching customer details." });
+    }
+});
+
+//feature 14
+
+app.put("/rentals/:rentalId/return", async (req, res) => {
+    const { rentalId } = req.params;
+
+    try {
+        const [result] = await connection.query(
+            "UPDATE rental SET return_date = NOW() WHERE rental_id = ?",
+            [rentalId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Rental not found." });
+        }
+
+        res.json({ message: "Rental returned successfully." });
+    } catch (error) {
+        console.error("Error returning rental:", error);
+        res.status(500).json({ error: "Error returning rental." });
     }
 });
 

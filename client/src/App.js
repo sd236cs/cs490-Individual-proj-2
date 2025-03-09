@@ -30,10 +30,10 @@ function App() {
     const [showSearchResults, setShowSearchResults] = useState(false); // Toggle search results display
 
     //feature 7
-    /* const [movieIdentifier, setMovieIdentifier] = useState("");
-    const [customerId, setCustomerId] = useState("");
-    const [staffId, setStaffId] = useState("");
-    const [message, setMessage] = useState(""); */
+    const [rentalCustomerId, setRentalCustomerId] = useState("");
+    const [rentalInventoryId, setRentalInventoryId] = useState("");
+    const [rentalStaffId, setRentalStaffId] = useState("");
+    const [rentalMessage, setRentalMessage] = useState("");
 
     //feature 8
     const [customers, setCustomers] = useState([]);
@@ -213,35 +213,27 @@ function App() {
     };
 
     //feature 7
-    /*const handleRentMovie = async (e) => {
+    const handleRentFilm = async (e) => {
         e.preventDefault();
-        setMessage("");
-
         try {
-            const response = await axios.post("http://localhost:5000/rent-movie",
-                {
-                    inventoryId: movieIdentifier.match(/^\d+$/) ? movieIdentifier : null,
-                    movieName: isNaN(movieIdentifier) ? movieIdentifier : null,
-                    customerId: customerId,
-                    staffId: staffId,
-                },
-                {
-                    headers: {
-                        "Content-Type": "application/json", // Ensure this header is set
-                    },
-                }
-            );
+            const response = await axios.post("http://localhost:5000/rentals", {
+                customerId: rentalCustomerId,
+                inventoryId: rentalInventoryId,
+                staffId: rentalStaffId,
+            });
 
-
-            setMessage(response.data.message);
+            setRentalMessage(response.data.message);
+            setRentalCustomerId("");
+            setRentalInventoryId("");
+            setRentalStaffId("");
         } catch (error) {
             if (error.response) {
-                setMessage(error.response.data.error || "Error occurred while renting the movie.");
+                setRentalMessage(error.response.data.error);
             } else {
-                setMessage("Error occurred while contacting the server.");
+                setRentalMessage("Error renting film. Please try again.");
             }
         }
-    }; */
+    };
 
     //feature 8
 
@@ -402,6 +394,20 @@ function App() {
         } catch (error) {
             console.error("Error fetching customer details or rentals:", error);
             alert("Error fetching customer details. Please try again.");
+        }
+    };
+
+    //feature 14
+
+    const handleReturnRental = async (rentalId) => {
+        try {
+            await axios.put(`http://localhost:5000/rentals/${rentalId}/return`);
+            // Refresh rental history
+            const rentalsResponse = await axios.get(`http://localhost:5000/customers/${customerDetails.customer_id}/rentals`);
+            setRentalHistory(rentalsResponse.data);
+        } catch (error) {
+            console.error("Error returning rental:", error);
+            alert("Error returning rental. Please try again.");
         }
     };
 
@@ -647,46 +653,27 @@ function App() {
             </div>
 
             {/* FEATURE 7 */}
-            {/*
-            <div className="rent-movie-section">
-                <h2>Rent a Movie</h2>
-                <form onSubmit={handleRentMovie}>
-                    <div>
-                        <label>Movie Inventory ID or Name:</label>
-                        <input
-                            type="text"
-                            value={movieIdentifier}
-                            onChange={(e) => setMovieIdentifier(e.target.value)}
-                            placeholder="Enter inventory ID or movie name"
-                            required
-                        />
-                    </div>
+            <div className="feature7">
+                <h2>Rent a film</h2>
+                <form onSubmit={handleRentFilm}>
                     <div>
                         <label>Customer ID:</label>
-                        <input
-                            type="number"
-                            value={customerId}
-                            onChange={(e) => setCustomerId(e.target.value)}
-                            placeholder="Enter customer ID"
-                            required
-                        />
+                        <input type="number" value={rentalCustomerId} onChange={(e) => setRentalCustomerId(e.target.value)} required />
+                    </div>
+                    <div>
+                        <label>Inventory ID:</label>
+                        <input type="number" value={rentalInventoryId} onChange={(e) => setRentalInventoryId(e.target.value)} required />
                     </div>
                     <div>
                         <label>Staff ID:</label>
-                        <input
-                            type="number"
-                            value={staffId}
-                            onChange={(e) => setStaffId(e.target.value)}
-                            placeholder="Enter staff ID"
-                            required
-                        />
+                        <input type="number" value={rentalStaffId} onChange={(e) => setRentalStaffId(e.target.value)} required />
                     </div>
-                    <button type="submit">Rent Movie</button>
+                    <button type="submit">Rent Film</button>
+                    {rentalMessage && <p>{rentalMessage}</p>}
                 </form>
-                {message && <p>{message}</p>}
-            </div>*/}
+            </div>
 
-            {/* FEATURE 8, 11, 12 */}
+            {/* FEATURE 8, 11, 12, 13, 14 */}
             <div className="Feature8">
                 <h2>Customer List</h2>
                 {loading && <p>Loading...</p>}
@@ -783,6 +770,11 @@ function App() {
                                         <td>{rental.title}</td>
                                         <td>{rental.rental_date}</td>
                                         <td>{rental.return_date || "Not Returned"}</td>
+                                        <td>
+                                            {!rental.return_date && (
+                                                <button onClick={() => handleReturnRental(rental.rental_id)}>Return</button>
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                                 </tbody>
