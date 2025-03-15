@@ -247,3 +247,7 @@ input {
   max-height: 80vh;
   overflow-y: auto;
 }
+
+span{
+  padding: 0 20px;
+}

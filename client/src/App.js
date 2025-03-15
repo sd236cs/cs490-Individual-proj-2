@@ -98,6 +98,17 @@ function App() {
         fetchTopActors();
     };
 
+    const handleSubmit3 = (e) => {
+        e.preventDefault(); // Prevent page reload
+        setErrorMessage3(""); // Reset error message
+        if (!storeId) {
+            setErrorMessage3("Please enter a valid Store ID.");
+            return;
+        }
+
+        fetchTopActors();
+    };
+
     // Function to fetch top 5 rented films
     const fetchTopFilms = async () => {
         try {
@@ -460,10 +471,12 @@ function App() {
                     </div>
                 </div>
             )}
+
+            {/* FEATURE 3 */}
             <h2>Top Actors by Store</h2>
 
             {/* Form for inputting Store ID */}
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit3}>
                 <label htmlFor="storeId">Enter Store ID: </label>
                 <input
                     id="storeId"

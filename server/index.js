@@ -11,7 +11,7 @@ app.use(express.json());
 const connection = await mysql.createPool({
     host: "localhost",
     user: "root",
-    password: "CS490ip2",
+    password: "",
     database: "sakila",
     waitForConnections: true,
     connectionLimit: 10,
@@ -292,8 +292,8 @@ app.post("/rentals", async (req, res) => {
 
 //feature 8
 app.get("/customers", async (req, res) => {
-    const page = parseInt(req.query.page) || 1; // Current page number (default to 1)
-    const limit = parseInt(req.query.limit) || 10; // Number of items per page (default to 10)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
 
     try {
